@@ -43,3 +43,5 @@ exec qemu-system-x86_64 \
   -append "console=ttyS0 quiet" \
   -m 512M \
   -smp 2
+  -netdev user,id=net0 \
+    -device rtl8139,netdev=net0

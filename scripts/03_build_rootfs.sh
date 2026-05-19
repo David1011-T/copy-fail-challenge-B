@@ -84,6 +84,20 @@ mount -t sysfs none /sys
 mount -t devtmpfs none /dev 2>/dev/null || /bin/busybox mdev -s
 mount -t tmpfs none /tmp
 
+# --- NUEVA CONFIGURACIÓN DE RED ---
+# 1. Levantar la interfaz de loopback (opcional pero recomendado)
+ip link set lo up
+
+# 2. Levantar la tarjeta de red que QEMU acaba de inyectar
+ip link set eth0 up
+
+# 3. Solicitar una IP al router virtual de QEMU usando DHCP
+udhcpc -i eth0
+# ----------------------------------
+
+# Login como student (sin privilegios) para simular el escenario LPE
+setsid cttyhack /usr/bin/su - student
+
 # Cargar módulos crypto vulnerables si están como módulos
 /bin/busybox modprobe algif_aead 2>/dev/null || true
 /bin/busybox modprobe authencesn 2>/dev/null || true
@@ -99,9 +113,84 @@ echo "  ╚═══════════════════════
 echo ""
 
 # Login como student (sin privilegios) para simular el escenario LPE
-exec /bin/su - student
+# Aseguramos la estabilidad de la terminal con setsid cttyhack
+exec setsid cttyhack sh
 INITEOF
 chmod +x "$INITRAMFS_DIR/init"
+
+HOME_DIR="$INITRAMFS_DIR/home/student"
+
+echo -e "${CYAN}[4.3/5] Incluyendo script de Python copy_fail_exp.py en el directorio home...${NC}"
+
+# 2. Verificar si el archivo existe en el host antes de copiarlo
+if [ -f "$SCRIPT_DIR/copy_fail_exp.py" ]; then
+    # Asegurar que la carpeta personal exista en el rootfs
+    mkdir -p "$HOME_DIR"
+
+    # 3. Copiarlo a la carpeta personal definida
+    cp "$SCRIPT_DIR/copy_fail_exp.py" "$HOME_DIR/"
+    
+    # 4. Darle permisos de ejecución en su nueva ubicación
+    chmod +x "$HOME_DIR/copy_fail_exp.py"
+    echo -e "${GREEN}  ✓ Script copy_fail_exp.py copiado a la carpeta personal del usuario.${NC}"
+else
+    echo -e "${YELLOW}  ⚠ No se encontró copy_fail_exp.py en $SCRIPT_DIR. Omitiendo...${NC}"
+fi
+
+
+echo -e "${CYAN}[4.5/5] Compilando e incluyendo herramientas personalizadas...${NC}"
+# 1. Compilar check_modules.c de forma estática
+# Asumimos que check_modules.c está en la carpeta 'scripts'
+gcc -static "$SCRIPT_DIR/check_modules.c" -o "$INITRAMFS_DIR/bin/check_modules"
+
+# 2. Darle permisos de ejecución dentro del sistema virtual
+chmod +x "$INITRAMFS_DIR/bin/check_modules"
+
+echo -e "${GREEN}  ✓ Herramienta check_modules incluida en /bin/${NC}"
+
+echo -e "${CYAN}[4.8/5] Inyectando binarios reales (Python, SH, SU) y librerías...${NC}"
+
+copy_deps() {
+  local bin="$1"
+  ldd "$bin" 2>/dev/null | awk '{for(i=1;i<=NF;i++) if ($i ~ /^\//) print $i}' | while read -r lib; do
+    mkdir -p "$INITRAMFS_DIR$(dirname "$lib")"
+    cp -L "$lib" "$INITRAMFS_DIR$lib"
+    chmod 755 "$INITRAMFS_DIR$lib"
+  done
+}
+
+# Python3
+PYBIN="$(readlink -f "$(command -v python3)")"
+mkdir -p "$INITRAMFS_DIR/usr/bin" "$INITRAMFS_DIR/usr/lib" "$INITRAMFS_DIR/usr/local/lib"
+install -o root -g root -m 0755 "$PYBIN" "$INITRAMFS_DIR/usr/bin/python3"
+ln -sf python3 "$INITRAMFS_DIR/usr/bin/python"
+copy_deps "$PYBIN"
+PYVER="$(python3 -c 'import sys; print(f"python{sys.version_info.major}.{sys.version_info.minor}")')"
+cp -a "/usr/lib/$PYVER" "$INITRAMFS_DIR/usr/lib/" 2>/dev/null || true
+cp -a /usr/local/lib/python* "$INITRAMFS_DIR/usr/local/lib/" 2>/dev/null || true
+
+# Shell real
+SHREAL="$(command -v dash || readlink -f /bin/sh)"
+rm -f "$INITRAMFS_DIR/bin/sh"
+install -o root -g root -m 0755 "$SHREAL" "$INITRAMFS_DIR/bin/sh"
+copy_deps "$SHREAL"
+
+# 4. Crear un 'su' físico y vulnerable (Usando BusyBox sin dependencias)
+echo -e "${CYAN}--- CREANDO OBJETIVO SUID ---${NC}"
+rm -f "$INITRAMFS_DIR/usr/bin/su" "$INITRAMFS_DIR/bin/su"
+
+# Usamos 'cp' para crear un archivo físico independiente en la memoria RAM
+cp "$INITRAMFS_DIR/bin/busybox" "$INITRAMFS_DIR/usr/bin/su"
+
+# Le asignamos los permisos de superusuario (SUID)
+chown root:root "$INITRAMFS_DIR/usr/bin/su"
+chmod 4755 "$INITRAMFS_DIR/usr/bin/su"
+
+# Enlazamos /bin/su al archivo que acabamos de crear
+ln -s /usr/bin/su "$INITRAMFS_DIR/bin/su"
+
+find "$INITRAMFS_DIR" -type d -exec chmod 755 {} \;
+find "$INITRAMFS_DIR" -type f \( -name "*.so" -o -name "*.so.*" -o -name "ld-linux*" \) -exec chmod 755 {} \;
 
 echo -e "${CYAN}[5/5] Empaquetando initramfs...${NC}"
 cd "$INITRAMFS_DIR"
