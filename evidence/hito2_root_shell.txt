@@ -1,6 +1,6 @@
 === HITO 2: EXPLOIT EXITOSO ===
 Fecha: Tue May 19 23:39:59 UTC 2026
-Hostname: (none)
+Hostname: copy-fail-David1011-T
 Identidad POST-exploit: uid=0(root) gid=1001(student) groups=1001(student)
 Kernel: 6.12.0
 SHA256 del exploit usado:

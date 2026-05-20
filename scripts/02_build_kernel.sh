@@ -74,8 +74,30 @@ make tinyconfig
 
 # ── Usuarios (setuid binaries para LPE) ────────────────────────────────────
 ./scripts/config --enable MULTIUSER
+# 1. Activar el soporte para módulos
+./scripts/config --enable CONFIG_MODULES
 
+# 2. Activar el soporte para eliminar módulos (Crucial para rmmod)
+./scripts/config --enable CONFIG_MODULE_UNLOAD
+
+# 3. Compilar algif_aead como MÓDULO ('m' en lugar de 'y')
+./scripts/config --module CONFIG_CRYPTO_USER_API_AEAD
+
+echo "--- Forzando configuración de Módulos para el Hito 3 ---"
+# 1. Habilitar el sistema de módulos del kernel
+./scripts/config --enable CONFIG_MODULES
+./scripts/config --enable CONFIG_MODULE_UNLOAD
+
+# 2. Habilitar la API base
+./scripts/config --enable CONFIG_CRYPTO_USER_API
+
+# 3. Forzar los componentes vulnerables como MÓDULOS (m)
+./scripts/config --enable CONFIG_CRYPTO_USER_API_AEAD
+./scripts/config --enable CONFIG_CRYPTO_AUTHENCESN
+
+# 4. Sincronizar dependencias automáticamente
 make olddefconfig
+
 
 echo -e "${CYAN}[3/4] Compilando bzImage con ${JOBS} cores (~20-25 min)...${NC}"
 make -j"$JOBS" bzImage 2>&1 | tail -5
