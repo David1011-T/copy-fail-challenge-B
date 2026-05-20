@@ -1,0 +1,6 @@
+=== HITO 4: PARCHE APLICADO ===
+Fecha: Wed May 20 00:25:15 UTC 2026
+Kernel: 6.12.0
+Identidad: uid=1001(student) gid=1001(student) groups=1001(student)
+Intento exploit post-parche:
+echo "(exploit falló)"
